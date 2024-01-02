@@ -1,2 +1,3 @@
-# formula1_data_engineering_project
-Databricks Project including understanding of Data Lake, DataFrames. SQL, Python
+# Formula 1 Data Engineering Project
+Real World Project on Formula1 Racing. 
+The technology used: Azure Databricks, Delta Lake, Unity Catalog, Azure Data Factory
