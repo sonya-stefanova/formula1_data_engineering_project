@@ -9,7 +9,7 @@
 
 # COMMAND ----------
 
-race_results_df = spark.read.parquet(f"{presentation_folder_path}/race_results")
+race_results_df = spark.read.parquet(f"{presentation_folder_path}/output")
 
 # COMMAND ----------
 
@@ -45,7 +45,11 @@ display(final_df.filter("race_year in (2019,2020)"))
 
 # COMMAND ----------
 
-final_df.write.mode("overwrite").parquet(f"{presentation_folder_path}/driver_standings")
+
+
+# COMMAND ----------
+
+final_df.write.mode("overwrite").format("parquet").saveAsTable("formula1_presentation.driver_standings")
 
 # COMMAND ----------
 

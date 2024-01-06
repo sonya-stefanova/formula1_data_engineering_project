@@ -9,6 +9,11 @@
 
 # COMMAND ----------
 
+dbutils.widgets.text("p_data_source", "")
+v_data_source = dbutils.widgets.get("p_data_source")
+
+# COMMAND ----------
+
 from pyspark.sql.types import StructType, StructField, IntegerType, StringType, DateType
 
 # COMMAND ----------
@@ -20,19 +25,19 @@ races_schema = StructType(fields=[StructField("raceId", IntegerType(), False),
                                   StructField("name", StringType(), True),
                                   StructField("date", DateType(), True),
                                   StructField("time", StringType(), True),
-                                  StructField("url", StringType(), True)
+                                  StructField("url", StringType(), True) 
 ])
 
 # COMMAND ----------
 
-race_df = spark.read\
-.option("header", True)\
-.schema(races_schema)\
-.csv("/mnt/sonyadatalakestorage/raw/races.csv")
+races_df = spark.read \
+.option("header", True) \
+.schema(races_schema) \
+.csv(f"{raw_folder_path}/races.csv"))
 
 # COMMAND ----------
 
-display(race_df)
+display(races_df)
 
 # COMMAND ----------
 
@@ -45,12 +50,8 @@ from pyspark.sql.functions import current_timestamp, to_timestamp, concat, col, 
 
 # COMMAND ----------
 
-races_with_timestamp_df = race_df.withColumn("ingestion_date", current_timestamp())\
-    .withColumn("race_timestamp", to_timestamp(concat(col('date'), lit(' '), col('time')), 'yyyy-MM-dd HH:mm:ss'))
-
-# COMMAND ----------
-
-display(races_with_timestamp_df)
+races_with_timestamp_df = races_df.withColumn("race_timestamp", to_timestamp(concat(col('date'), lit(' '), col('time')), 'yyyy-MM-dd HH:mm:ss')) \
+.withColumn("data_source", lit(v_data_source))
 
 # COMMAND ----------
 
@@ -63,11 +64,12 @@ display(races_with_timestamp_df)
 
 # COMMAND ----------
 
-selected_races_df = races_with_timestamp_df.select(col("raceId").alias("race_id"), col("year").alias("race_year"), col("round"), col("circuitId").alias("circuit_id"), col("name"), col("ingestion_date"), col("race_timestamp"))
+races_selected_df = races_with_ingestion_date_df.select(col('raceId').alias('race_id'), col('year').alias('race_year'), 
+                                                   col('round'), col('circuitId').alias('circuit_id'),col('name'), col('ingestion_date'), col('race_timestamp'))
 
 # COMMAND ----------
 
- display(selected_races_df)
+ display(races_selected_df)
 
 # COMMAND ----------
 
@@ -76,7 +78,12 @@ selected_races_df = races_with_timestamp_df.select(col("raceId").alias("race_id"
 
 # COMMAND ----------
 
-selected_races_df.write.mode("overwrite").partitionBy("race_year").parquet("/mnt/sonyadatalakestorage/processed/races")
+races_selected_df.write.mode("overwrite").partitionBy('race_year').format("parquet").saveAsTable("formula1_processed.races")
+
+
+# COMMAND ----------
+
+
 
 # COMMAND ----------
 
@@ -89,4 +96,4 @@ display(spark.read.parquet("/mnt/sonyadatalakestorage/processed/races"))
 
 # COMMAND ----------
 
-
+dbutils.notebook.exit("Success")

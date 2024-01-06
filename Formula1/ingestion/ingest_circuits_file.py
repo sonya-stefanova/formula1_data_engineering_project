@@ -44,15 +44,15 @@ from pyspark.sql.types import StructType, StructField, IntegerType, StringType, 
 # COMMAND ----------
 
 circuits_schema = StructType(fields=[StructField("circuitId", IntegerType(), False),
-                                    StructField("circuitRef", StringType(), True),
-                                    StructField("name", StringType(), True),
-                                    StructField("location", StringType(), True),
-                                    StructField("country", StringType(), True),
-                                    StructField("lat", DoubleType(), True),
-                                    StructField("lng", DoubleType(), True),
-                                    StructField("alt", IntegerType(), True),
-                                    StructField("url", StringType(), True),
-                                    ])
+                                     StructField("circuitRef", StringType(), True),
+                                     StructField("name", StringType(), True),
+                                     StructField("location", StringType(), True),
+                                     StructField("country", StringType(), True),
+                                     StructField("lat", DoubleType(), True),
+                                     StructField("lng", DoubleType(), True),
+                                     StructField("alt", IntegerType(), True),
+                                     StructField("url", StringType(), True)
+])
 
 # COMMAND ----------
 
@@ -64,10 +64,11 @@ circuits_schema = StructType(fields=[StructField("circuitId", IntegerType(), Fal
 
 # COMMAND ----------
 
-circuits_df = spark.read\
-    .option("header", True)\
-    .schema(circuits_schema)\
-    .csv(f"{raw_folder_path}/circuits.csv")
+
+circuits_df = spark.read \
+.option("header", True) \
+.schema(circuits_schema) \
+.csv("/mnt/formula1dl/raw/circuits.csv")
 
 # COMMAND ----------
 
@@ -88,19 +89,21 @@ circuits_df.describe().show()
 
 # COMMAND ----------
 
-selected_all_columns_circuits_df = circuits_df.select("circuitId", "circuitRef", "name", "location", "country", "lat", "lng", "alt", "url")
+circuits_selected_df = circuits_df.select(col("circuitId"), col("circuitRef"), col("name"), col("location"), col("country"), col("lat"), col("lng"), col("alt"))
+
 
 # COMMAND ----------
 
-display(selected_all_columns_circuits_df)
+display(circuits_selected_df)
 
 # COMMAND ----------
 
-selected_all_columns_circuits_df = circuits_df.select(circuits_df["circuitId"], circuits_df["circuitRef"], circuits_df["name"], circuits_df["location"], circuits_df["country"], circuits_df["lat"], circuits_df["lng"], circuits_df["alt"], circuits_df["url"])
+circuits_selected_df = circuits_df.select(col("circuitId"), col("circuitRef"), col("name"), col("location"), col("country"), col("lat"), col("lng"), col("alt"))
+
 
 # COMMAND ----------
 
-display(selected_all_columns_circuits_df)
+display(circuits_selected_df)
 
 # COMMAND ----------
 
@@ -126,17 +129,16 @@ from pyspark.sql.functions import lit
 
 # COMMAND ----------
 
-renamed_circuits_df = selected_all_columns_circuits_df.withColumnRenamed("circuitId", "circuit_id")\
-    .withColumnRenamed("circuitRef", "circuit_ref")\
-    .withColumnRenamed("lat", "latitude")\
-    .withColumnRenamed("lng", "longitude")\
-    .withColumnRenamed("alt", "altitude")\
-    .withColumn("data_source", lit(v_data_source))
+circuits_renamed_df = circuits_selected_df.withColumnRenamed("circuitId", "circuit_id") \
+.withColumnRenamed("circuitRef", "circuit_ref") \
+.withColumnRenamed("lat", "latitude") \
+.withColumnRenamed("lng", "longitude") \
+.withColumnRenamed("alt", "altitude") 
     
 
 # COMMAND ----------
 
-display(renamed_circuits_df)
+display(circuits_renamed_df)
 
 # COMMAND ----------
 
@@ -146,16 +148,17 @@ display(renamed_circuits_df)
 
 # COMMAND ----------
 
-final_circuits_df = add_ingestion_date(renamed_circuits_df)
+circuits_final_df = add_ingestion_date(circuits_renamed_df)
+
 
 # COMMAND ----------
 
-display(final_circuits_df)
+display(circuits_final_df)
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC #### Step 5. Write data as parquet file.
+# MAGIC #### Step 5. Write data to the data lake as a parquet file.
 # MAGIC
 
 # COMMAND ----------
@@ -164,17 +167,22 @@ final_circuits_df.write.mode("overwrite").parquet(f"{processed_folder_path}/circ
 
 # COMMAND ----------
 
-# MAGIC %fs
-# MAGIC ls /mnt/sonyadatalakestorage/processed/circuits
+circuits_final_df.write.mode("overwrite").format("parquet").saveAsTable("formula1_processed.circuits")
+
+# COMMAND ----------
+
+display(spark.read.parquet(f"{processed_folder_path}/circuits"))
+
+
+# COMMAND ----------
+
+
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC SELECT * FROM formula1_processed.circuits;
 # MAGIC
-
-# COMMAND ----------
-
-df = spark.read.parquet("/mnt/sonyadatalakestorage/processed/circuits")
-
-# COMMAND ----------
-
-display(df)
 
 # COMMAND ----------
 

@@ -13,6 +13,19 @@
 
 # COMMAND ----------
 
+dbutils.widgets.text("p_data_source", "")
+v_data_source = dbutils.widgets.get("p_data_source")
+
+# COMMAND ----------
+
+# MAGIC %run "../includes/configuration"
+
+# COMMAND ----------
+
+# MAGIC %run "../includes/common_functions"
+
+# COMMAND ----------
+
 from pyspark.sql.types import StructType, StructField, IntegerType, StringType, DateType
 
 # COMMAND ----------
@@ -45,13 +58,15 @@ lap_times_df.count()
 
 # COMMAND ----------
 
-from pyspark.sql.functions import current_timestamp
+from pyspark.sql.functions import current_timestamp, lit
 
 # COMMAND ----------
 
-final_df=lap_times_df.withColumnRenamed("racerId", "racer_id")\
-                    .withColumnRenamed("driverId", "driver_id")\
-                    .withColumn("ingestion_date", current_timestamp())
+final_df = lap_times_df.withColumnRenamed("driverId", "driver_id") \
+.withColumnRenamed("raceId", "race_id") \
+.withColumn("ingestion_date", current_timestamp()) \
+.withColumn("data_source", lit(v_data_source))
+
 
 
 # COMMAND ----------
@@ -61,16 +76,7 @@ final_df=lap_times_df.withColumnRenamed("racerId", "racer_id")\
 
 # COMMAND ----------
 
-final_df.write.mode("overwrite").parquet("/mnt/sonyadatalakestorage/processed/lap_times")
-
-# COMMAND ----------
-
-# MAGIC %fs
-# MAGIC ls /mnt/sonyadatalakestorage/processed/lap_times
-
-# COMMAND ----------
-
-display(spark.read.parquet("dbfs:/mnt/sonyadatalakestorage/processed/lap_times"))
+final_df.write.mode("overwrite").format("parquet").saveAsTable("formula1_processed.lap_times")
 
 # COMMAND ----------
 
