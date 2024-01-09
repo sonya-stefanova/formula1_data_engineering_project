@@ -9,7 +9,25 @@
 
 # COMMAND ----------
 
+# MAGIC %run "../includes/common_functions"
+
+# COMMAND ----------
+
+# MAGIC %run "../includes/configuration"
+
+# COMMAND ----------
+
 from pyspark.sql.types import StructType, StructField, IntegerType, StringType, DateType
+
+# COMMAND ----------
+
+dbutils.widgets.text("p_data_source", "")
+v_data_source = dbutils.widgets.get("p_data_source")
+
+# COMMAND ----------
+
+dbutils.widgets.text("p_file_date", "2021-03-21")
+v_file_date = dbutils.widgets.get("p_file_date")
 
 # COMMAND ----------
 
@@ -28,7 +46,7 @@ races_schema = StructType(fields=[StructField("raceId", IntegerType(), False),
 race_df = spark.read\
 .option("header", True)\
 .schema(races_schema)\
-.csv("/mnt/sonyadatalakestorage/raw/races.csv")
+.csv(f"{raw_folder_path}/{v_file_date}/races.csv")
 
 # COMMAND ----------
 
@@ -46,11 +64,8 @@ from pyspark.sql.functions import current_timestamp, to_timestamp, concat, col, 
 # COMMAND ----------
 
 races_with_timestamp_df = race_df.withColumn("ingestion_date", current_timestamp())\
-    .withColumn("race_timestamp", to_timestamp(concat(col('date'), lit(' '), col('time')), 'yyyy-MM-dd HH:mm:ss'))
-
-# COMMAND ----------
-
-display(races_with_timestamp_df)
+    .withColumn("race_timestamp", to_timestamp(concat(col('date'), lit(' '), col('time')), 'yyyy-MM-dd HH:mm:ss'))\
+    .withColumn("file_date", lit(v_file_date))
 
 # COMMAND ----------
 
@@ -67,26 +82,22 @@ selected_races_df = races_with_timestamp_df.select(col("raceId").alias("race_id"
 
 # COMMAND ----------
 
- display(selected_races_df)
-
-# COMMAND ----------
-
 # MAGIC %md
 # MAGIC #####Step4.Write the output the processed container in a parquet format. 
 
 # COMMAND ----------
 
-selected_races_df.write.mode("overwrite").partitionBy("race_year").parquet("/mnt/sonyadatalakestorage/processed/races")
+# MAGIC %sql
+# MAGIC -- DROP TABLE formula1_processed.races;
 
 # COMMAND ----------
 
-# MAGIC %fs
-# MAGIC ls /mnt/sonyadatalakestorage/processed/races
+selected_races_df.write.mode('overwrite').partitionBy('race_year').parquet(f'{processed_folder_path}/races')
 
 # COMMAND ----------
 
-display(spark.read.parquet("/mnt/sonyadatalakestorage/processed/races"))
+overwrite_partition(selected_races_df, 'formula1_processed', 'races', 'race_id')
 
 # COMMAND ----------
 
-
+dbutils.notebook.exit("Success")

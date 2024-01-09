@@ -54,4 +54,8 @@ mount_adls('sonyadatalakestorage', 'processed')
 
 # COMMAND ----------
 
+mount_adls('sonyadatalakestorage', 'dldemo')
 
+# COMMAND ----------
+
+dbutils.fs.ls('mnt/sonyadatalakestorage/dldemo')

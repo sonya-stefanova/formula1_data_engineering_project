@@ -20,6 +20,11 @@ v_data_source=dbutils.widgets.get("p_data_source")
 
 # COMMAND ----------
 
+dbutils.widgets.text("p_file_date", "2021-03-21")
+v_file_date=dbutils.widgets.get("p_file_date")
+
+# COMMAND ----------
+
 v_data_source
 
 # COMMAND ----------
@@ -67,7 +72,7 @@ circuits_schema = StructType(fields=[StructField("circuitId", IntegerType(), Fal
 circuits_df = spark.read\
     .option("header", True)\
     .schema(circuits_schema)\
-    .csv(f"{raw_folder_path}/circuits.csv")
+    .csv(f"{raw_folder_path}/{v_file_date}/circuits.csv")
 
 # COMMAND ----------
 
@@ -131,7 +136,8 @@ renamed_circuits_df = selected_all_columns_circuits_df.withColumnRenamed("circui
     .withColumnRenamed("lat", "latitude")\
     .withColumnRenamed("lng", "longitude")\
     .withColumnRenamed("alt", "altitude")\
-    .withColumn("data_source", lit(v_data_source))
+    .withColumn("data_source", lit(v_data_source))\
+    .withColumn("file_date", lit(v_file_date))
     
 
 # COMMAND ----------
@@ -160,21 +166,17 @@ display(final_circuits_df)
 
 # COMMAND ----------
 
+# MAGIC %sql
+# MAGIC -- drop table formula1_processed.circuits
+
+# COMMAND ----------
+
 final_circuits_df.write.mode("overwrite").parquet(f"{processed_folder_path}/circuits")
 
 # COMMAND ----------
 
-# MAGIC %fs
-# MAGIC ls /mnt/sonyadatalakestorage/processed/circuits
-# MAGIC
+final_circuits_df.write.mode("overwrite").format("parquet").saveAsTable("formula1_processed.circuits")
 
-# COMMAND ----------
-
-df = spark.read.parquet("/mnt/sonyadatalakestorage/processed/circuits")
-
-# COMMAND ----------
-
-display(df)
 
 # COMMAND ----------
 
@@ -182,4 +184,11 @@ dbutils.notebook.exit("Success")
 
 # COMMAND ----------
 
+# MAGIC %sql
+# MAGIC REFRESH TABLE formula1_processed.circuits;
 
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC SELECT * 
+# MAGIC FROM formula1_processed.circuits;
