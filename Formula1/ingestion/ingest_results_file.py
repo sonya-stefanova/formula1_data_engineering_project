@@ -9,6 +9,24 @@
 
 # COMMAND ----------
 
+dbutils.widgets.text("p_data_source", "")
+v_data_source = dbutils.widgets.get("p_data_source")
+
+# COMMAND ----------
+
+dbutils.widgets.text("p_file_date", "2021-03-28")
+v_file_date = dbutils.widgets.get("p_file_date")
+
+# COMMAND ----------
+
+# MAGIC %run "../includes/common_functions"
+
+# COMMAND ----------
+
+# MAGIC %run "../includes/configuration"
+
+# COMMAND ----------
+
 from pyspark.sql.types import StructType, StructField, IntegerType, StringType, DateType, FloatType
 
 # COMMAND ----------
@@ -34,9 +52,9 @@ results_schema = StructType(fields=[StructField("resultId", IntegerType(), False
 
 # COMMAND ----------
 
-results_df = spark.read\
-    .schema(results_schema)\
-    .json("/mnt/sonyadatalakestorage/raw/results.json")
+results_df = spark.read \
+.schema(results_schema) \
+.json(f"{raw_folder_path}/{v_file_date}/results.json")
 
 # COMMAND ----------
 
@@ -66,13 +84,20 @@ results_with_columns_df = results_df.withColumnRenamed("resultId", "result_id")\
                                     .withColumnRenamed("fastestLap","fastest_lap")\
                                     .withColumnRenamed("fastestLapTime","fastest_lap_time")\
                                     .withColumnRenamed("fastestLapSpeed","fastest_lap_speed")\
-                                    .withColumn("ingestion_date",current_timestamp())\
+                                    .withColumn("data_source", lit(v_data_source)) \
+                                    .withColumn("file_date", lit(v_file_date))
+
                                     
 
 
 # COMMAND ----------
 
 # MAGIC %md
+
+# COMMAND ----------
+
+results_with_ingestion_date_df = add_ingestion_date(results_with_columns_df)
+
 
 # COMMAND ----------
 
@@ -85,20 +110,34 @@ from pyspark.sql.functions import col
 
 # COMMAND ----------
 
-results_final_df = results_with_columns_df.drop("statusId")
+results_final_df = results_with_ingestion_date_df.drop(col("statusId"))
+
 
 # COMMAND ----------
 
-# MAGIC %md
-# MAGIC #####Step4. Write the output the processed container as a parquet
+results_deduped_df = results_final_df.dropDuplicates(['race_id', 'driver_id'])
+
 
 # COMMAND ----------
 
-results_final_df.write.mode("overwrite").partitionBy("race_id").parquet("/mnt/sonyadatalakestorage/processed/results")
+merge_condition = "tgt.result_id = src.result_id AND tgt.race_id = src.race_id"
+merge_delta_data(results_deduped_df, 'formula1_processed', 'results', processed_folder_path, merge_condition, 'race_id')
 
 # COMMAND ----------
 
-display(spark.read.parquet("/mnt/sonyadatalakestorage/processed/results"))
+dbutils.notebook.exit("Success")
+
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC SELECT COUNT(1)
+# MAGIC FROM formula1_processed.results;
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC SELECT * from formula1_processed.results;
 
 # COMMAND ----------
 

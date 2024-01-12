@@ -15,13 +15,15 @@
 
 # COMMAND ----------
 
-results_df=spark.read\
-.option("inferSchema", True) \
-.json("/mnt/sonyadatalakestorage/raw/2021-03-28/results.json")
+# MAGIC %python
+# MAGIC results_df=spark.read\
+# MAGIC .option("inferSchema", True) \
+# MAGIC .json("/mnt/sonyadatalakestorage/raw/2021-03-28/results.json")
 
 # COMMAND ----------
 
-display(results_df)
+# MAGIC %python
+# MAGIC display(results_df)
 
 # COMMAND ----------
 
@@ -31,8 +33,9 @@ display(results_df)
 
 # COMMAND ----------
 
-results_df.write.format("delta").mode("overwrite").saveAsTable("formula1_demo.results_managed")
-
+# MAGIC %python
+# MAGIC results_df.write.format("delta").mode("overwrite").saveAsTable("formula1_demo.results_managed")
+# MAGIC
 
 # COMMAND ----------
 
@@ -51,9 +54,10 @@ results_df.write.format("delta").mode("overwrite").saveAsTable("formula1_demo.re
 
 # COMMAND ----------
 
-
-results_df.write.format("delta").mode("overwrite").save("/mnt/sonyadatalakestorage/dldemo/results_external")
-
+# MAGIC %python
+# MAGIC
+# MAGIC results_df.write.format("delta").mode("overwrite").save("/mnt/sonyadatalakestorage/dldemo/results_external")
+# MAGIC
 
 # COMMAND ----------
 
@@ -76,12 +80,14 @@ results_df.write.format("delta").mode("overwrite").save("/mnt/sonyadatalakestora
 
 # COMMAND ----------
 
-results_external_df = spark.read.format("delta").load("/mnt/sonyadatalakestorage/dldemo/results_external")
-
+# MAGIC %python
+# MAGIC results_external_df = spark.read.format("delta").load("/mnt/sonyadatalakestorage/dldemo/results_external")
+# MAGIC
 
 # COMMAND ----------
 
-display(results_external_df)
+# MAGIC %python
+# MAGIC display(results_external_df)
 
 # COMMAND ----------
 
@@ -90,7 +96,8 @@ display(results_external_df)
 
 # COMMAND ----------
 
-results_df.write.format("delta").mode("overwrite").partitionBy("constructorId").saveAsTable("formula1_demo.results_partitioned")
+# MAGIC %python
+# MAGIC results_df.write.format("delta").mode("overwrite").partitionBy("constructorId").saveAsTable("formula1_demo.results_partitioned")
 
 # COMMAND ----------
 
@@ -134,14 +141,15 @@ results_df.write.format("delta").mode("overwrite").partitionBy("constructorId").
 
 # COMMAND ----------
 
-from delta.tables import *
-from pyspark.sql.functions import *
-
-deltaTable = DeltaTable.forPath(spark, '/mnt/formula1dl/dldemo/results_managed')
-
-# Declare the predicate by using a SQL-formatted string.
-deltaTable.delete("points = 0")
-
+# MAGIC %python
+# MAGIC from delta.tables import *
+# MAGIC from pyspark.sql.functions import *
+# MAGIC
+# MAGIC deltaTable = DeltaTable.forPath(spark, '/mnt/formula1dl/dldemo/results_managed')
+# MAGIC
+# MAGIC # Declare the predicate by using a SQL-formatted string.
+# MAGIC deltaTable.delete("points = 0")
+# MAGIC
 
 # COMMAND ----------
 
@@ -151,15 +159,17 @@ deltaTable.delete("points = 0")
 
 # COMMAND ----------
 
-drivers_day1_df = spark.read \
-.option("inferSchema", True) \
-.json("/mnt/sonyadatalakestorage/raw/2021-03-28/drivers.json") \
-.filter("driverId <= 10") \
-.select("driverId", "dob", "name.forename", "name.surname")
+# MAGIC %python
+# MAGIC drivers_day1_df = spark.read \
+# MAGIC .option("inferSchema", True) \
+# MAGIC .json("/mnt/sonyadatalakestorage/raw/2021-03-28/drivers.json") \
+# MAGIC .filter("driverId <= 10") \
+# MAGIC .select("driverId", "dob", "name.forename", "name.surname")
 
 # COMMAND ----------
 
-drivers_day1_df.createOrReplaceTempView("drivers_day1")
+# MAGIC %python
+# MAGIC drivers_day1_df.createOrReplaceTempView("drivers_day1")
 
 # COMMAND ----------
 
@@ -169,20 +179,23 @@ drivers_day1_df.createOrReplaceTempView("drivers_day1")
 
 # COMMAND ----------
 
-drivers_day2_df = spark.read \
-.option("inferSchema", True) \
-.json("/mnt/sonyadatalakestorage/raw/2021-03-28/drivers.json") \
-.filter("driverId BETWEEN 6 AND 15") \
-.select("driverId", "dob", upper("name.forename").alias("forename"), upper("name.surname").alias("surname"))
-
-
-# COMMAND ----------
-
-drivers_day2_df.createOrReplaceTempView("drivers_day2")
+# MAGIC %python
+# MAGIC drivers_day2_df = spark.read \
+# MAGIC .option("inferSchema", True) \
+# MAGIC .json("/mnt/sonyadatalakestorage/raw/2021-03-28/drivers.json") \
+# MAGIC .filter("driverId BETWEEN 6 AND 15") \
+# MAGIC .select("driverId", "dob", upper("name.forename").alias("forename"), upper("name.surname").alias("surname"))
+# MAGIC
 
 # COMMAND ----------
 
-display(drivers_day2_df)
+# MAGIC %python
+# MAGIC drivers_day2_df.createOrReplaceTempView("drivers_day2")
+
+# COMMAND ----------
+
+# MAGIC %python
+# MAGIC display(drivers_day2_df)
 
 # COMMAND ----------
 
@@ -276,36 +289,38 @@ display(drivers_day2_df)
 
 # COMMAND ----------
 
-from pyspark.sql.functions import upper
-
-drivers_day3_df = spark.read \
-.option("inferSchema", True) \
-.json("/mnt/sonyadatalakestorage/raw/2021-03-28/drivers.json") \
-.filter("driverId BETWEEN 1 AND 5 OR driverId BETWEEN 16 AND 20") \
-.select("driverId", "dob", upper("name.forename").alias("forename"), upper("name.surname").alias("surname"))
-
+# MAGIC %python
+# MAGIC from pyspark.sql.functions import upper
+# MAGIC
+# MAGIC drivers_day3_df = spark.read \
+# MAGIC .option("inferSchema", True) \
+# MAGIC .json("/mnt/sonyadatalakestorage/raw/2021-03-28/drivers.json") \
+# MAGIC .filter("driverId BETWEEN 1 AND 5 OR driverId BETWEEN 16 AND 20") \
+# MAGIC .select("driverId", "dob", upper("name.forename").alias("forename"), upper("name.surname").alias("surname"))
+# MAGIC
 
 # COMMAND ----------
 
-from pyspark.sql.functions import current_timestamp
-from delta.tables import DeltaTable
-
-deltaTable = DeltaTable.forPath(spark, "/mnt/formula1dl/dldemo/drivers_merge")
-
-deltaTable.alias("tgt").merge(
-    drivers_day3_df.alias("upd"),
-    "tgt.driverId = upd.driverId") \
-  .whenMatchedUpdate(set = { "dob" : "upd.dob", "forename" : "upd.forename", "surname" : "upd.surname", "updatedDate": "current_timestamp()" } ) \
-  .whenNotMatchedInsert(values =
-    {
-      "driverId": "upd.driverId",
-      "dob": "upd.dob",
-      "forename" : "upd.forename", 
-      "surname" : "upd.surname", 
-      "createdDate": "current_timestamp()"
-    }
-  ) \
-  .execute()
+# MAGIC %python
+# MAGIC from pyspark.sql.functions import current_timestamp
+# MAGIC from delta.tables import DeltaTable
+# MAGIC
+# MAGIC deltaTable = DeltaTable.forPath(spark, "/mnt/formula1dl/dldemo/drivers_merge")
+# MAGIC
+# MAGIC deltaTable.alias("tgt").merge(
+# MAGIC     drivers_day3_df.alias("upd"),
+# MAGIC     "tgt.driverId = upd.driverId") \
+# MAGIC   .whenMatchedUpdate(set = { "dob" : "upd.dob", "forename" : "upd.forename", "surname" : "upd.surname", "updatedDate": "current_timestamp()" } ) \
+# MAGIC   .whenNotMatchedInsert(values =
+# MAGIC     {
+# MAGIC       "driverId": "upd.driverId",
+# MAGIC       "dob": "upd.dob",
+# MAGIC       "forename" : "upd.forename", 
+# MAGIC       "surname" : "upd.surname", 
+# MAGIC       "createdDate": "current_timestamp()"
+# MAGIC     }
+# MAGIC   ) \
+# MAGIC   .execute()
 
 # COMMAND ----------
 
@@ -322,6 +337,168 @@ deltaTable.alias("tgt").merge(
 # MAGIC ####Understanding of history;
 # MAGIC ####Understanding of time travelling;
 # MAGIC ####Understanding of vacuum
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC DESC HISTORY formula1_demo.drivers_merge;
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC SELECT * FROM formula1_demo.drivers_merge VERSION AS OF 3;
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC SELECT * FROM formula1_demo.drivers_merge TIMESTAMP AS OF '2024-01-11T09:35:42.000+00:00';
+
+# COMMAND ----------
+
+df = spark.read.format("delta").option("timestampAsOf", '2024-01-11T09:35:42.000+00:00').load('/mnt/formula1dl/dldemo/drivers_merge')
+
+# COMMAND ----------
+
+display(df)
+
+# COMMAND ----------
+
+# MAGIC %md 
+# MAGIC ##Vacuum - function making data complies with the GDPR requirements
+# MAGIC
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC VACUUM formula1_demo.drivers_merge;
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC DELETE FROM formula1_demo.drivers_merge WHERE driverId = 1;
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC SELECT * FROM formula1_demo.drivers_merge;
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC DESC HISTORY formula1_demo.drivers_merge;
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC SELECT * FROM formula1_demo.drivers_merge VERSION AS OF 3;
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC MERGE INTO formula1_demo.drivers_merge tgt
+# MAGIC USING formula1_demo.drivers_merge VERSION AS OF 3 src
+# MAGIC    ON (tgt.driverId = src.driverId)
+# MAGIC WHEN NOT MATCHED THEN
+# MAGIC    INSERT *
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC select * 
+# MAGIC from formula1_demo.drivers_merge
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC desc history formula1_demo.drivers_merge
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### TRANSACTION  LOG
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC CREATE TABLE IF NOT EXISTS formula1_demo.drivers_transactions (
+# MAGIC driverId INT,
+# MAGIC dob DATE,
+# MAGIC forename STRING, 
+# MAGIC surname STRING,
+# MAGIC createdDate DATE, 
+# MAGIC updatedDate DATE
+# MAGIC )
+# MAGIC USING DELTA
+# MAGIC
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC DESC HISTORY formula1_demo.drivers_transactions
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC INSERT INTO formula1_demo.drivers_transactions
+# MAGIC SELECT * FROM formula1_demo.drivers_merge
+# MAGIC WHERE driverId = 2;
+# MAGIC
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC DELETE FROM formula1_demo.drivers_transactions
+# MAGIC WHERE driverId = 1;
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ##Convert PARQUET file to DELTA
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC CREATE TABLE IF NOT EXISTS formula1_demo.drivers_convert_to_delta (
+# MAGIC driverId INT,
+# MAGIC dob DATE,
+# MAGIC forename STRING, 
+# MAGIC surname STRING,
+# MAGIC createdDate DATE, 
+# MAGIC updatedDate DATE
+# MAGIC )
+# MAGIC USING PARQUET
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC INSERT INTO formula1_demo.drivers_convert_to_delta
+# MAGIC SELECT * FROM formula1_demo.drivers_merge
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC CONVERT TO DELTA formula1_demo.drivers_convert_to_delta
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ####
+# MAGIC Write a table from a delta file into a data frame and save it as a parquet
+
+# COMMAND ----------
+
+df = spark.table("formula1_demo.drivers_convert_to_delta")
+
+
+# COMMAND ----------
+
+df.write.format("parquet").save("/mnt/sonyadatalakestorage/dldemo/drivers_convert_to_delta_new")
+
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC CONVERT TO DELTA parquet.`/mnt/sonyadatalakestorage/dldemo/drivers_convert_to_delta_new`
 
 # COMMAND ----------
 

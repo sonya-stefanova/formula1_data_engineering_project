@@ -8,6 +8,25 @@
 
 # COMMAND ----------
 
+dbutils.widgets.text("p_data_source", "")
+v_data_source = dbutils.widgets.get("p_data_source")
+
+# COMMAND ----------
+
+
+dbutils.widgets.text("p_file_date", "2021-03-21")
+v_file_date = dbutils.widgets.get("p_file_date")
+
+# COMMAND ----------
+
+# MAGIC %run "../includes/configuration"
+
+# COMMAND ----------
+
+# MAGIC %run "../includes/common_functions"
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC #####Step1. Read the JSON file
 
@@ -36,13 +55,14 @@ drivers_schema = StructType(fields=[StructField("driverId", IntegerType(), False
 
 # COMMAND ----------
 
-drivers_df = spark.read\
-    .schema(drivers_schema)\
-    .json("/mnt/sonyadatalakestorage/raw/drivers.json")
+drivers_df = spark.read \
+.schema(drivers_schema) \
+.json(f"{raw_folder_path}/{v_file_date}/drivers.json")
 
 # COMMAND ----------
 
-drivers_df.printSchema()
+drivers_with_ingestion_date_df = add_ingestion_date(drivers_df)
+
 
 # COMMAND ----------
 
@@ -50,14 +70,11 @@ from pyspark.sql.functions import col, concat, current_timestamp, lit
 
 # COMMAND ----------
 
-drivers_with_columns_renamed=drivers_df.withColumnRenamed("driverId", "driver_id")\
-                                        .withColumnRenamed("driverRef", "driver_ref")\
-                                        .withColumn("ingestion_date", current_timestamp())\
-                                        .withColumn("name", concat(col("name.forename"), lit(" "), col("name.surname")))
-
-# COMMAND ----------
-
-display(drivers_with_columns_renamed)
+drivers_with_columns_df = drivers_with_ingestion_date_df.withColumnRenamed("driverId", "driver_id") \
+                                    .withColumnRenamed("driverRef", "driver_ref") \
+                                    .withColumn("name", concat(col("name.forename"), lit(" "), col("name.surname"))) \
+                                    .withColumn("data_source", lit(v_data_source)) \
+                                    .withColumn("file_date", lit(v_file_date))
 
 # COMMAND ----------
 
@@ -72,7 +89,8 @@ display(drivers_with_columns_renamed)
 
 # COMMAND ----------
 
-drivers_final_df = drivers_with_columns_renamed.drop("url")
+drivers_final_df = drivers_with_columns_df.drop(col("url"))
+
 
 # COMMAND ----------
 
@@ -81,20 +99,22 @@ display(drivers_final_df)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC #####Step4. Write the data into a parquet file
+# MAGIC #####Step4. Write the data into a delta file
 
 # COMMAND ----------
 
-drivers_final_df.write.mode("overwrite").parquet("/mnt/sonyadatalakestorage/processed/drivers")
+drivers_final_df.write.mode("overwrite").format("delta").saveAsTable("formula1_processed.drivers")
+
 
 # COMMAND ----------
 
-# MAGIC %fs
-# MAGIC ls /mnt/sonyadatalakestorage/processed/drivers
+dbutils.notebook.exit("Success")
 
 # COMMAND ----------
 
-display(spark.read.parquet("dbfs:/mnt/sonyadatalakestorage/processed/drivers"))
+# MAGIC %sql
+# MAGIC SELECT * FROM f1_processed.drivers
+# MAGIC
 
 # COMMAND ----------
 
